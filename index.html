@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>online ping pong</title>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #canvas {
+            background-color: black;
+        }
+        
+    </style>
+</head>
+<body>
+    <!-- make online pages from index.js -->
+    <canvas id="canvas"></canvas>
+
+    <script>
+        var canvas = document.getElementById('canvas');
+        var ctx = canvas.getContext('2d');
+        var width = canvas.width = window.innerWidth;
+        var height = canvas.height = window.innerHeight;
+       
+        document.addEventListener(("resize") , function(){
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            location.reload()
+        });
+
+        class player {
+            constructor(x, y, w, h, color, score) {
+                this.score = score;
+                this.x = x;
+                this.y = y;
+                this.w = w;
+                this.h = h;
+                this.color = color;
+                this.score = 0
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+            }
+
+            update() {
+                this.draw();
+            }
+        }
+
+        class ball {
+            constructor(x, y, r, color) {
+                this.x = x;
+                this.y = y;
+                this.r = r;
+                this.color = color;
+                this.dx = 2;
+                this.dy = -2;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2, false);
+                ctx.fill();
+            }
+
+            update() {
+                this.draw();
+            }
+        }
+
+        class net {
+            constructor(x, y, w, h, color) {
+                this.x = x;
+                this.y = y;
+                this.w = w;
+                this.h = h;
+                this.color = color;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+            }
+        }
+
+        var p1 = new player(10, height / 2 - 50, 10, 100, '#fff');
+        var p2 = new player(width - 20, height / 2 - 50, 10, 100, '#fff');
+        var balls = new ball(width / 2, height / 2, 10, '#fff');
+
+        let score = 0
+        let ballsSpeed = 2.4
+
+            let player1 = {
+            up: false,
+            down: false,
+        }
+
+        let fps = 60;
+        let gameFrame = 1000 / fps;
+
+        function update() {
+            setInterval(() => {
+                //if the window is resize reload the page
+                if (width != window.innerWidth || height != window.innerHeight) {
+                    location.reload()
+                }
+                
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(0, 0, width, height);
+                p1.update();
+                p2.update();
+                balls.update();
+                
+                let nets = new net(width / 2 - 1, 0, 2, height, '#fff');
+                nets.draw();
+
+                //draw a circle a perfect circle position center of nets
+                ctx.beginPath();
+                ctx.arc(width / 2, height / 2, 35, 0, Math.PI * 2, false);
+                ctx.fillStyle = '#fff';
+                //make it bold
+                ctx.lineWidth = 5;
+                //make the line in circle dissappear
+                ctx.strokeStyle = '#fff';
+                ctx.stroke();
+
+            if (balls.x - balls.r < 0) {
+                p2.score++;
+                balls.x = width / 2;
+                balls.y = height / 2;
+                balls.dx = 2;
+                balls.dy = -2;
+            } else if (balls.x + balls.r > width) {
+                p1.score++;
+                balls.x = width / 2;
+                balls.y = height / 2;
+                balls.dx = -2;
+                balls.dy = -2;
+            }
+
+            if (balls.y - balls.r < 0 || balls.y + balls.r > height) {
+                balls.dy = -balls.dy;
+            }
+
+            ctx.font = "30px Arial";
+            ctx.fillText(p1.score, 100, 100);
+            ctx.fillText(p2.score, width - 100, 100);
+
+            if (p1.score == 10) {
+                //stop the game
+                clearInterval(update);
+                ctx.font = "30px Arial";
+                ctx.fillText("Player 1 wins", width / 2 - canvas.offsetWidth, height / 2 - canvas.offsetHeight);
+            } else if (p2.score == 10) {
+                //stop the game
+                clearInterval(update);
+                ctx.font = "30px Arial";
+                ctx.fillText("Player 2 wins", width / 2 - canvas.offsetWidth, height / 2);
+            }
+
+            //make the ball physics
+            balls.x += balls.dx * ballsSpeed;
+            balls.y += balls.dy  * ballsSpeed;
+
+            //if the ball hit the paddle or player 1 or player 2
+            if (
+                (balls.x - balls.r < p1.x + p1.w &&
+                    balls.x - balls.r > p1.x &&
+                    balls.y + balls.r > p1.y &&
+                    balls.y - balls.r < p1.y + p1.h) ||
+                (balls.x + balls.r > p2.x &&
+                    balls.x + balls.r < p2.x + p2.w &&
+                    balls.y + balls.r > p2.y &&
+                    balls.y - balls.r < p2.y + p2.h)
+            ) {
+                balls.dx = -balls.dx;
+            } else if (
+                (balls.x - balls.r < 0) ||
+                (balls.x + balls.r > width)
+            ) {
+                balls.dx = -balls.dx;
+            } 
+
+            //make the bot move 
+            if (balls.y + balls.r > p2.y + p2.h && p2.y + p2.h < height) {
+                p2.y += 5;
+            } else if (balls.y - balls.r < p2.y + p2.h && p2.y > 0) {
+                p2.y -= 5;
+            }
+
+            if(player1.up && p1.y > 0) {
+                p1.y -= 10;
+                console.log("wes asu")
+            } else if(player1.down && p1.y + p1.h < height) {
+                p1.y += 10;
+                console.log("wes asu")
+            }
+        }, gameFrame);
+        }
+
+        //controller
+        document.addEventListener('keydown', function(event) {
+            if (event.keyCode == 38 || event.keyCode == 87) {
+                player1.up = true;
+            } else if (event.keyCode == 40 || event.keyCode == 83) {
+                player1.down = true;
+            }
+        });
+
+        document.addEventListener('keyup', function(event) {
+            if (event.keyCode == 38 || event.keyCode == 87) {
+                player1.up = false;
+            } else if (event.keyCode == 40 || event.keyCode == 83) {
+                player1.down = false;
+            }
+        });
+
+        update()
+    </script>
+</body>
+</html>
